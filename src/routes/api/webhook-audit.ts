@@ -9,6 +9,9 @@ export const Route = createFileRoute("/api/webhook-audit")({
   server: {
     handlers: {
       GET: async () => {
+        if (process.env.NODE_ENV === "production") {
+          return new Response(null, { status: 404 });
+        }
         return Response.json({
           ok: true,
           localhost8644: {

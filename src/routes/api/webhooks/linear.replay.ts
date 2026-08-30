@@ -10,6 +10,9 @@ export const Route = createFileRoute("/api/webhooks/linear/replay")({
   server: {
     handlers: {
       POST: async ({ request }) => {
+        if (process.env.NODE_ENV === "production") {
+          return new Response(null, { status: 404 });
+        }
         let json: unknown = {};
         try {
           json = await request.json();
