@@ -10,6 +10,9 @@ export const Route = createFileRoute("/api/webhooks/linear")({
   server: {
     handlers: {
       GET: async () => {
+        if (process.env.NODE_ENV === "production") {
+          return Response.json({ ok: false, error: "Not Found" }, { status: 404 });
+        }
         return Response.json({
           ok: true,
           contract: webhookContract(),

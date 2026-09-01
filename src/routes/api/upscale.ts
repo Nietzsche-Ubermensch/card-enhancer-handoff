@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { requireApiUser } from "@/lib/auth/api.server";
 import { realesrganContract, runRealEsrgan } from "@/lib/realesrgan";
 
 export const Route = createFileRoute("/api/upscale")({
@@ -6,6 +7,9 @@ export const Route = createFileRoute("/api/upscale")({
     handlers: {
       GET: async () => Response.json(realesrganContract()),
       POST: async ({ request }) => {
+        const unauthorized = await requireApiUser();
+        if (unauthorized) return unauthorized;
+
         const body = (await request.json().catch(() => null)) as { image?: unknown } | null;
         if (!body || typeof body.image !== "string") {
           return Response.json({ ok: false, error: "JSON { image: data URL } required" }, { status: 400 });

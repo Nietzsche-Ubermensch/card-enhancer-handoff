@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { requireApiUser } from "@/lib/auth/api.server";
 import { chatBodySchema, readJsonBody, zodErrorMessage } from "@/lib/ai/schemas";
 import { takeRateSlot } from "@/lib/ai/rate-limit";
 import { xaiChat } from "@/lib/ai/xai";
@@ -7,6 +8,9 @@ export const Route = createFileRoute("/api/ai/chat")({
   server: {
     handlers: {
       POST: async ({ request }) => {
+        const unauthorized = await requireApiUser();
+        if (unauthorized) return unauthorized;
+
         const json = await readJsonBody(request);
         if (!json.ok) return Response.json({ ok: false, error: json.error }, { status: 400 });
 
