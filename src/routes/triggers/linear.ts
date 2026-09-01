@@ -6,6 +6,9 @@ export const Route = createFileRoute("/triggers/linear")({
   server: {
     handlers: {
       GET: async () => {
+        if (process.env.NODE_ENV === "production") {
+          return new Response(null, { status: 404 });
+        }
         return Response.json({
           ok: true,
           connector: LINEAR_CONNECT_ID,
@@ -17,12 +20,9 @@ export const Route = createFileRoute("/triggers/linear")({
       },
       POST: async ({ request }) => {
         const rawBody = await request.text();
-        const auth = request.headers.get("authorization");
-        if (auth) {
-          const verified = await connectTriggerVerified(request, rawBody);
-          if (!verified) {
-            return Response.json({ ok: false, error: "invalid Connect OIDC" }, { status: 401 });
-          }
+        const verified = await connectTriggerVerified(request, rawBody);
+        if (!verified) {
+          return Response.json({ ok: false, error: "invalid Connect OIDC" }, { status: 401 });
         }
         const result = ingestLinearWebhook({
           rawBody,
