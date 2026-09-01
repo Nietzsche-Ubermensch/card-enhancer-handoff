@@ -57,8 +57,15 @@ test("non-.sql entries are dropped (readdir also yields the auth/ directory)", (
 });
 
 test("the auth schema ships outside the globbed directory", () => {
+  // The auth schema stays in migrations/auth/ (never globbed); the app may add
+  // its own top-level migrations (0002_linear_webhooks.sql), so assert the auth
+  // schema's placement rather than an empty pending set.
   const migrationsDir = join(projectRoot(), "migrations");
-  assert.deepEqual(pendingMigrations(readdirSync(migrationsDir), []), []);
+  const pending = pendingMigrations(readdirSync(migrationsDir), []);
+  assert.ok(
+    pending.every(({ name }) => name !== AUTH_MIGRATION),
+    "auth schema must not be globbed from migrations/",
+  );
   assert.ok(readdirSync(join(migrationsDir, "auth")).includes("0001_auth.sql"));
 });
 
