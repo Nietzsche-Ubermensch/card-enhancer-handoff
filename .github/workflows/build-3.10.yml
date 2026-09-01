@@ -29,7 +29,28 @@ jobs:
           cache: npm
       - name: Install
         run: npm ci
+      # check:auth probes the dev server's /__app-env endpoint, so the server
+      # must be running first — otherwise the check reports "could not
+      # observe" (exit 2), as it did when this step ran without one.
+      - name: Start dev server
+        run: |
+          npm run dev > /tmp/dev-server.log 2>&1 &
+          for i in $(seq 1 90); do
+            if curl -sf http://127.0.0.1:8080/__app-env > /dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "dev server did not become ready in 90s; log follows" >&2
+          cat /tmp/dev-server.log >&2
+          exit 1
       - name: Auth invariant
         run: npm run check:auth
+      # Each step is a fresh shell, so match the dev server's command line
+      # instead of the start step's job table. with-app-env.mjs forwards
+      # SIGTERM to the Vite child, and the runner reaps any orphans post-job.
+      - name: Stop dev server
+        if: always()
+        run: pkill -f "scripts/with-app-env.mjs vite dev" || true
       - name: Real-ESRGAN contract
         run: node --experimental-strip-types --test src/lib/realesrgan.test.ts src/lib/huggingface-webhook.test.ts src/lib/linear-webhook.test.ts
